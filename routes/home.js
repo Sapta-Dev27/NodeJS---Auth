@@ -11,7 +11,7 @@ router.get("/welcome" , homemiddleware , (req, res) => {
       username ,
       userRole ,
       userid,
-      userEmail
+      
     }
   })
 })

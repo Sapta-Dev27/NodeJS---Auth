@@ -3,11 +3,10 @@ const mongoose = require("mongoose")
 const connectToDb = async () => {
   try {
     try {
-    await mongoose.connect("URL
-                           ")
-    console.log("Database connected succesfully")
+      await mongoose.connect("mongodb+srv://saptadev27:saptadev27@cluster0.lofv3yp.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0")
+      console.log("Database connected succesfully")
     }
-    catch(error){
+    catch (error) {
       console.log(error)
     }
   }
@@ -16,5 +15,5 @@ const connectToDb = async () => {
   }
 }
 
-module.exports = connectToDb ;
+module.exports = connectToDb;
 

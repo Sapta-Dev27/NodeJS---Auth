@@ -16,18 +16,18 @@ const uploadToCloudinaryControl = async (req, res) => {
       })
     }
 
-    const { url, publicId } = await uploadToCloudinary(req.file.path)
+    const { url, publicId, uploadedBy } = await uploadToCloudinary(req.file.path)
 
     const fileUploaded = await Image.create({
       publicId,
-      url
+      url,
+      uploadedBy: req.userInfo.userid,
     })
 
     res.status(201).json({
       success: true,
       message: "File Uploaded Succesfully",
-      imageId: publicId,
-      imageURL: url
+      image: fileUploaded
 
     })
 
@@ -81,8 +81,8 @@ const getImagesById = async (req, res) => {
       if (getImageThroughId) {
         return res.status(200).json({
           success: true,
-          message: "Image is fetched successfully from the Database" ,
-          data : getImageThroughId
+          message: "Image is fetched successfully from the Database",
+          data: getImageThroughId
         })
       }
       else {
@@ -108,36 +108,78 @@ const getImagesById = async (req, res) => {
   }
 }
 
-const getImagesByImagePublicId =  async(req, res) => {
+const getImagesByImagePublicId = async (req, res) => {
   try {
     try {
-       const getPublicId = req.params.id ;
-       const getImageByImageThroughPublicId = await Image.find({publicId : getPublicId})
-       if(getImageByImageThroughPublicId) {
+      const getPublicId = req.params.id;
+      const getImageByImageThroughPublicId = await Image.find({ publicId: getPublicId })
+      if (getImageByImageThroughPublicId) {
         return res.status(200).json({
-          success : true ,
-          message : "Image is fetched successfully from the Database" ,
-          data : getImageByImageThroughPublicId
+          success: true,
+          message: "Image is fetched successfully from the Database",
+          data: getImageByImageThroughPublicId
         })
-       }
-       else {
+      }
+      else {
         return res.status(404).json({
-          success : false ,
-          message : "Image Public ID provided is not Found. Try with a different ID "
+          success: false,
+          message: "Image Public ID provided is not Found. Try with a different ID "
         })
-       }
+      }
     }
-    catch(error){
+    catch (error) {
       console.log(error)
     }
   }
-  catch(error) {
+  catch (error) {
     console.log(error)
     return res.status(500).json({
-      success : false ,
+      success: false,
       message: "Internal Server Error"
     })
   }
 }
 
-module.exports = { uploadToCloudinaryControl, getAllImagesFromDb , getImagesById  , getImagesByImagePublicId}
+
+const deleletImages = async (req, res) => {
+  try {
+    const imageId = req.params.id;
+    const checkImage = await Image.findById(imageId)
+
+    if (!checkImage) {
+      return res.status(404).json({
+        success: false,
+        message: "Image ID provided is not found. Try with a different ID "
+      })
+    }
+    
+    const userId = req.userInfo.userid;
+    if( checkImage.uploadedBy.toString() !== userId){
+      return res.status(400).json({
+        success : false,
+        message : "User cannot delete this image as user does not have the access to delete this image"
+      })
+    }
+    
+     const deleteImageFromCloudinary = await cloudinary.uploader.destroy(checkImage.publicId)
+  
+    const deleteImageFromDB = await Image.findByIdAndDelete(imageId)
+    if(deleteImageFromDB && deleteImageFromCloudinary ){
+      return res.status(200).json({
+        success : true,
+        message : "Image is successfully deleted from Database and Cloudinary Storage"
+      })
+    }
+
+  }
+  catch (error) {
+    console.log(error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal Server Error"
+    })
+  }
+}
+
+
+module.exports = { uploadToCloudinaryControl, getAllImagesFromDb, getImagesById, getImagesByImagePublicId , deleletImages }

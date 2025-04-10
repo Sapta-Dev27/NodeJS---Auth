@@ -182,4 +182,45 @@ const deleletImages = async (req, res) => {
 }
 
 
-module.exports = { uploadToCloudinaryControl, getAllImagesFromDb, getImagesById, getImagesByImagePublicId , deleletImages }
+const fetchImagesViaPagination =  async (req, res) => {
+  try {
+     const pages = req.query.pages || 1 ;
+     const limit = req.query.limit || 2 ;
+     const skip = (pages-1)*limit;
+
+     const sortBy = req.query.sortBy|| "publicId";
+     const sortOrder = req.query.sortOrder  === "asc" ? 1 : -1 ;
+     const sortObj = {};
+ 
+     const noofImages = await Image.countDocuments();
+     const noofPagesrequired = Math.ceil(noofImages/limit);
+
+     sortObj[sortBy]= sortOrder;
+     const fetchImages = await Image.find().sort(sortObj).skip(skip).limit(limit);
+     if( fetchImages) {
+      return res.status(200).json({
+        success : true ,
+        message : "Images Pagianted sucessfully" ,
+        noofPages : noofPagesrequired ,
+        currentPage : pages ,
+        data : fetchImages
+        
+      })
+     }
+     else {
+      return res.status(404).json({
+        success : false ,
+        message : "Images cannot be fetched "
+      })
+     }
+  }
+  catch{
+    console.log(error);
+    return res.status(500).json({
+      success : false ,
+      messgae : "Internal Server Error"
+    })
+  }
+}
+
+module.exports = { uploadToCloudinaryControl, getAllImagesFromDb, getImagesById, getImagesByImagePublicId , deleletImages ,fetchImagesViaPagination }
